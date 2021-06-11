@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Configuration
 public class FunctionConfiguration {
@@ -43,6 +44,17 @@ public class FunctionConfiguration {
                 e.printStackTrace();
             }
 
+        };
+    }
+
+    // get the data from RabbitMQ
+    // send the data to reverse
+    @Bean
+    public Function<String, String> uppercase() {
+        return v -> {
+            String uppercased = v.toUpperCase();
+            System.out.println(uppercased);
+            return uppercased;
         };
     }
 }
