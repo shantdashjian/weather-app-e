@@ -32,6 +32,19 @@ public class FunctionConfiguration {
         };
     }
 
+    // Get the data from RabbitMQ
+    // Send the data to reverse
+    @Bean
+    public Function<String, String> uppercase() {
+        return v -> {
+            String uppercased = v.toUpperCase();
+            System.out.println(uppercased);
+            return uppercased;
+        };
+    }
+
+    // Get the data from uppercase
+    // Store the data to file
     @Bean
     public Consumer<String> reverse() {
         return v -> {
@@ -47,14 +60,4 @@ public class FunctionConfiguration {
         };
     }
 
-    // get the data from RabbitMQ
-    // send the data to reverse
-    @Bean
-    public Function<String, String> uppercase() {
-        return v -> {
-            String uppercased = v.toUpperCase();
-            System.out.println(uppercased);
-            return uppercased;
-        };
-    }
 }
