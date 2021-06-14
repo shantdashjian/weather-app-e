@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
@@ -63,6 +64,18 @@ public class WeatherAppIntegrationTests {
 
         // Assert
         verify(identityFileWriter, timeout(10000).times(1)).append("hello");
+    }
+
+    @Test
+    public void return_reverse_input_when_sending_payload() throws IOException {
+        // Arrange
+
+        // Act
+        producer.send("reverse-in-0", "hello");
+
+        // Assert
+        // Check that the file has the payload written to it
+        verify(reversedFileWriter, timeout(10000).times(1)).append("olleh");
     }
 
     @Test
