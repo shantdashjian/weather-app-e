@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Import(TestChannelBinderConfiguration.class)
-public class WeatherAppTests {
+public class WeatherAppUnitTests {
 
     @Autowired
     private InputDestination input;

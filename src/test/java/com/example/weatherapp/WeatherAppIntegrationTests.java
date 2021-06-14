@@ -1,31 +1,18 @@
 package com.example.weatherapp;
 
-import com.example.weatherapp.kafka.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -33,6 +20,11 @@ import static org.mockito.Mockito.verify;
 @Testcontainers
 @SpringBootTest
 public class WeatherAppIntegrationTests {
+
+    public static final DockerImageName RABBITMQ_IMAGE = DockerImageName.parse("rabbitmq:3-management");
+
+    @Container
+    public static RabbitMQContainer rabbitmq = new RabbitMQContainer(RABBITMQ_IMAGE);
 
     @MockBean
     @Qualifier("identityFileWriter")
@@ -42,57 +34,48 @@ public class WeatherAppIntegrationTests {
     @Qualifier("reversedFileWriter")
     private FileWriter reversedFileWriter;
 
-    @Container
-    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
-
-    @Autowired
-    private KafkaProducer producer;
-
     @DynamicPropertySource
     static void registerPgProperties(DynamicPropertyRegistry registry) {
-        String bootstrapServers = kafka.getBootstrapServers();
-        registry.add("spring.kafka.bootstrapServers", () -> bootstrapServers);
+        String host = rabbitmq.getHost();
+        Integer port = rabbitmq.getFirstMappedPort();
+        registry.add("spring.rabbitmq.host", () -> host);
+        registry.add("spring.rabbitmq.port", () -> port);
     }
 
     @Test
-    public void return_same_input_when_sending_payload() throws IOException, InterruptedException, ExecutionException {
+    public void return_same_input_when_sending_payload() throws IOException, InterruptedException {
         // Arrange
 
         // Act
-        producer.send("identity-in-0", "hello");
+        rabbitmq.execInContainer("rabbitmqadmin",
+                "publish", "exchange=identity-in-0", "routing_key=\"\"", "payload=hello");
 
         // Assert
         verify(identityFileWriter, timeout(10000).times(1)).append("hello");
     }
 
     @Test
-    public void return_uppercase_and_reversed_input_when_sending_payload() throws IOException {
+    public void return_reverse_input_when_sending_payload() throws IOException, InterruptedException {
         // Arrange
 
         // Act
-        producer.send("upperCaseReverseInput", "hello");
+        rabbitmq.execInContainer("rabbitmqadmin",
+                "publish", "exchange=reverse-in-0", "routing_key=\"\"", "payload=hello");
 
         // Assert
-        verify(reversedFileWriter, timeout(10000).times(1)).append("OLLEH");
+        verify(reversedFileWriter).append("olleh");
     }
 
-    @TestConfiguration
-    static class KafkaTestContainersConfiguration {
+    @Test
+    public void return_uppercase_and_reversed_input_when_sending_payload() throws IOException, InterruptedException {
+        // Arrange
 
-        @Bean
-        public ProducerFactory<String, String> producerFactory() {
-            Map<String, Object> configProps = new HashMap<>();
-            configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-            configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            return new DefaultKafkaProducerFactory<>(configProps);
-        }
+        // Act
+        rabbitmq.execInContainer("rabbitmqadmin",
+                "publish", "exchange=upperCaseReverseInput", "routing_key=\"\"", "payload=hello");
 
-        //
-        @Bean
-        public KafkaTemplate<String, String> kafkaTemplate() {
-            return new KafkaTemplate<>(producerFactory());
-        }
+        // Assert
+        verify(reversedFileWriter).append("OLLEH");
     }
 
 }
