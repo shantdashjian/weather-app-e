@@ -4,7 +4,7 @@
 To learn more about creating event-driven architectures/data pipelines using Spring Cloud Stream.
 
 ## What
-It's an app that reads events from a Kafka message broker, processes them, and stores the processed events to a file.
+It's an app that reads events from a Kafka message broker, processes them, and stores the processed events to a Postgres database.
 
 ## Architecure
 ![image](https://user-images.githubusercontent.com/5508288/121729507-6c46ee80-caa3-11eb-8169-094eadd5180c.png)
