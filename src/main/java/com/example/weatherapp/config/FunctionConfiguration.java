@@ -25,7 +25,7 @@ public class FunctionConfiguration {
             System.out.println("Received: " + v);
             MessageEntity message = new MessageEntity();
             message.setMessage(v);
-            this.repository.save(message);
+            this.repository.saveAndFlush(message);
         };
     }
 
@@ -49,7 +49,7 @@ public class FunctionConfiguration {
             System.out.println("Reversed: " + reversed);
             MessageEntity message = new MessageEntity();
             message.setMessage(reversed);
-            this.repository.save(message);
+            this.repository.saveAndFlush(message);
         };
     }
 

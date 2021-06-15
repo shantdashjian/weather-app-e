@@ -21,10 +21,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -47,8 +45,7 @@ public class WeatherAppIntegrationTests {
 
     @DynamicPropertySource
     static void registerPgProperties(DynamicPropertyRegistry registry) {
-        String bootstrapServers = kafka.getBootstrapServers();
-        registry.add("spring.kafka.bootstrapServers", () -> bootstrapServers);
+        registry.add("spring.kafka.bootstrapServers", () -> kafka.getBootstrapServers());
 
         registry.add("spring.datasource.url", () -> postgres.getJdbcUrl());
         registry.add("spring.datasource.username", () -> postgres.getUsername());
@@ -62,7 +59,7 @@ public class WeatherAppIntegrationTests {
     }
 
     @Test
-    public void return_same_input_when_sending_payload() throws IOException, InterruptedException, ExecutionException {
+    public void return_same_input_when_sending_payload() {
         // Arrange
 
         // Act
@@ -74,7 +71,7 @@ public class WeatherAppIntegrationTests {
     }
 
     @Test
-    public void return_reverse_input_when_sending_payload() throws IOException, InterruptedException {
+    public void return_reverse_input_when_sending_payload() {
         // Arrange
 
         // Act
@@ -86,7 +83,7 @@ public class WeatherAppIntegrationTests {
     }
 
     @Test
-    public void return_uppercase_and_reversed_input_when_sending_payload() throws IOException {
+    public void return_uppercase_and_reversed_input_when_sending_payload() {
         // Arrange
 
         // Act
