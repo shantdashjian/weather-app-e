@@ -1,18 +1,11 @@
 package com.example.weatherapp;
 
-import com.example.weatherapp.kafka.KafkaProducer;
 import com.example.weatherapp.repository.MessageRepository;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
@@ -22,8 +15,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -40,10 +31,10 @@ public class WeatherAppIntegrationTests {
     public static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
 
     @Autowired
-    private KafkaProducer producer;
+    private MessageRepository repository;
 
     @Autowired
-    private MessageRepository repository;
+    private StreamBridge streamBridge;
 
     @DynamicPropertySource
     static void registerPgProperties(DynamicPropertyRegistry registry) {
@@ -66,7 +57,7 @@ public class WeatherAppIntegrationTests {
         // Arrange
 
         // Act
-        producer.send("identity-in-0", "hello");
+        streamBridge.send("identity-in-0", "hello");
 
         // Assert
         await().atMost(10, TimeUnit.SECONDS)
@@ -78,7 +69,7 @@ public class WeatherAppIntegrationTests {
         // Arrange
 
         // Act
-        producer.send("reverse-in-0", "hello");
+        streamBridge.send("reverse-in-0", "hello");
 
         // Assert
         await().atMost(10, TimeUnit.SECONDS)
@@ -90,30 +81,10 @@ public class WeatherAppIntegrationTests {
         // Arrange
 
         // Act
-        producer.send("upperCaseReverseInput", "hello");
+        streamBridge.send("upperCaseReverseInput", "hello");
 
         // Assert
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("OLLEH").isEmpty());
     }
-
-    @TestConfiguration
-    static class KafkaTestContainersConfiguration {
-
-        @Bean
-        public ProducerFactory<String, String> producerFactory() {
-            Map<String, Object> configProps = new HashMap<>();
-            configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-            configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            return new DefaultKafkaProducerFactory<>(configProps);
-        }
-
-        //
-        @Bean
-        public KafkaTemplate<String, String> kafkaTemplate() {
-            return new KafkaTemplate<>(producerFactory());
-        }
-    }
-
 }
