@@ -50,7 +50,7 @@ public class WeatherAppUnitTests {
         configuration.identity().accept("hello");
 
         // Assert
-        verify(repository).save(messageCaptor.capture());
+        verify(repository).saveAndFlush(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo("hello");
     }
 
@@ -63,7 +63,7 @@ public class WeatherAppUnitTests {
         configuration.identity().accept(payload);
 
         // Assert
-        verify(repository).save(messageCaptor.capture());
+        verify(repository).saveAndFlush(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo(payload);
     }
 
@@ -76,7 +76,7 @@ public class WeatherAppUnitTests {
         configuration.reverse().accept(payload);
 
         // Assert
-        verify(repository).save(messageCaptor.capture());
+        verify(repository).saveAndFlush(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo("olleH");
     }
 
@@ -101,7 +101,7 @@ public class WeatherAppUnitTests {
         configuration.reverse().accept(configuration.uppercase().apply(payload));
 
         // Assert
-        verify(repository).save(messageCaptor.capture());
+        verify(repository).saveAndFlush(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo("OLLEH");
     }
 }
