@@ -1,8 +1,16 @@
 package com.example.weatherapp;
 
+import com.example.weatherapp.config.FunctionConfiguration;
+import com.example.weatherapp.entity.MessageEntity;
+import com.example.weatherapp.repository.MessageRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,81 +25,83 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Import(TestChannelBinderConfiguration.class)
+@ExtendWith(MockitoExtension.class)
 public class WeatherAppUnitTests {
 
-    @Autowired
-    private InputDestination input;
+    @Mock
+    private MessageRepository repository;
 
-    @Autowired
-    private OutputDestination output;
+    FunctionConfiguration configuration;
 
-    @MockBean
-    @Qualifier("identityFileWriter")
-    private FileWriter identityFileWriter;
+    final ArgumentCaptor<MessageEntity> messageCaptor = ArgumentCaptor.forClass(MessageEntity.class);
 
-    @MockBean
-    @Qualifier("reversedFileWriter")
-    private FileWriter reversedFileWriter;
+    @BeforeEach
+    public void setup() {
+        configuration = new FunctionConfiguration(repository);
+    }
 
     @Test
-    public void return_same_input_when_sending_payload() throws IOException {
+    public void return_same_input_when_sending_payload() {
         // Arrange
 
         // Act
-        this.input.send(new GenericMessage<byte[]>("hello".getBytes()),"identity-in-0");
+        configuration.identity().accept("hello");
 
         // Assert
-        // Check that the file has the payload written to it
-        verify(identityFileWriter).append("hello");
+        verify(repository).save(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getMessage()).isEqualTo("hello");
     }
 
     @RepeatedTest(3)
-    public void return_each_input_when_sending_payload(RepetitionInfo repetitionInfo) throws IOException {
+    public void return_each_input_when_sending_payload(RepetitionInfo repetitionInfo) {
         // Arrange
         String payload = "hello" + repetitionInfo.getCurrentRepetition();
+
         // Act
-        this.input.send(new GenericMessage<byte[]>(payload.getBytes()),"identity-in-0");
+        configuration.identity().accept(payload);
 
         // Assert
-        // Check that the file has the payload written to it
-        verify(identityFileWriter).append(payload);
+        verify(repository).save(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getMessage()).isEqualTo(payload);
     }
 
     @Test
-    public void return_reverse_input_when_sending_payload() throws IOException {
+    public void return_reverse_input_when_sending_payload() {
         // Arrange
+        String payload = "Hello";
 
         // Act
-        this.input.send(new GenericMessage<byte[]>("Hello".getBytes()), "reverse-in-0");
+        configuration.reverse().accept(payload);
 
         // Assert
-        // Check that the file has the payload written to it
-        verify(reversedFileWriter).append("olleH");
+        verify(repository).save(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getMessage()).isEqualTo("olleH");
     }
 
     @Test
     public void return_uppercase_input_when_sending_payload() {
         // Arrange
+        String payload = "Hello";
 
         // Act
-        this.input.send(new GenericMessage<byte[]>("hello".getBytes()), "uppercase-in-0");
+        String uppercased = configuration.uppercase().apply(payload);
 
         // Assert
-        assertThat(output.receive().getPayload()).isEqualTo("HELLO".getBytes());
+        assertThat(uppercased).isEqualTo("HELLO");
     }
 
     @Test
-    public void return_uppercase_and_reversed_input_when_sending_payload() throws IOException {
+    public void return_uppercase_and_reversed_input_when_sending_payload() {
         // Arrange
+        String payload = "Hello";
 
         // Act
-        this.input.send(new GenericMessage<byte[]>("hello".getBytes()), "upperCaseReverseInput");
+        configuration.reverse().accept(configuration.uppercase().apply(payload));
 
         // Assert
-        verify(reversedFileWriter).append("OLLEH");
+        verify(repository).save(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().getMessage()).isEqualTo("OLLEH");
     }
 }
