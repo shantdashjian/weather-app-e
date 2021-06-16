@@ -2,7 +2,9 @@ package com.example.weatherapp;
 
 import com.example.weatherapp.repository.MessageRepository;
 import com.example.weatherapp.schema.MessageDto;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,8 +14,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.MimeType;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -28,13 +30,19 @@ public class WeatherAppIntegrationTests {
 
     public static final String APPLICATION_AVRO = "application/*+avro";
 
+    static Network network = Network.newNetwork();
+
     @Container
-    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
+    public static KafkaContainer kafkaContainer =
+                new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
+//                        .withEnv("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:29092")
+//                        .withExposedPorts()
+                        .withNetwork(network);
+
+    public static GenericContainer schemaRegistryContainer;
 
     @Container
     public static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
-
-    public static GenericContainer schemaContainer;
 
     @Autowired
     private MessageRepository repository;
@@ -46,23 +54,31 @@ public class WeatherAppIntegrationTests {
 
     @DynamicPropertySource
     static void registerPgProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.kafka.bootstrapServers", () -> kafka.getBootstrapServers());
+        registry.add("spring.kafka.bootstrapServers", () -> kafkaContainer.getBootstrapServers());
 
         registry.add("spring.datasource.url", () -> postgres.getJdbcUrl());
         registry.add("spring.datasource.username", () -> postgres.getUsername());
         registry.add("spring.datasource.password", () -> postgres.getPassword());
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
 
-        schemaContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:latest"))
-                .dependsOn(kafka)
-                .withExposedPorts(8081)
-                .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
-                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
-                .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-//                .waitingFor(Wait.forHttp("/subjects"))
+    }
+
+    @BeforeAll
+    public static void containersSetup() {
+//        kafkaContainer.start();
+        System.out.println("bootstrabServes = " + kafkaContainer.getBootstrapServers());
+        System.out.println("getNetworkAliases = " + kafkaContainer.getNetworkAliases().get(0) + ":9092");
+        schemaRegistryContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:latest"))
+                .dependsOn(kafkaContainer)
+                .withNetwork(network)
+//                .withExposedPorts(8081)
+//                .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", kafkaContainer.getBootstrapServers())
+//                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", kafkaContainer.getNetworkAliases().get(0)+":9092")
+//                .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
         ;
-        schemaContainer.start();
-        ;
+        schemaRegistryContainer.start();
+
     }
 
     @BeforeEach
@@ -79,7 +95,7 @@ public class WeatherAppIntegrationTests {
                 .until(() -> !repository.findAllByMessage("hello").isEmpty());
     }
 
-    @Test
+    @Disabled
     public void return_reverse_input_when_sending_payload() {
         streamBridge.send("reverse-in-0", messageDto, MimeType.valueOf(APPLICATION_AVRO));
 
@@ -87,7 +103,7 @@ public class WeatherAppIntegrationTests {
                 .until(() -> !repository.findAllByMessage("olleh").isEmpty());
     }
 
-    @Test
+    @Disabled
     public void return_uppercase_and_reversed_input_when_sending_payload() {
         streamBridge.send("upperCaseReverseInput", messageDto, MimeType.valueOf(APPLICATION_AVRO));
 
