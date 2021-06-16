@@ -1,9 +1,10 @@
 package com.example.weatherapp;
 
-import com.example.weatherapp.config.FunctionConfiguration;
+import com.example.weatherapp.config.FunctionConfig;
 import com.example.weatherapp.entity.MessageEntity;
 import com.example.weatherapp.repository.MessageRepository;
 import com.example.weatherapp.schema.MessageDto;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Test;
@@ -20,22 +21,28 @@ public class WeatherAppUnitTests {
 
     private final MessageRepository repository = mock(MessageRepository.class);
 
-    private final FunctionConfiguration configuration = new FunctionConfiguration(repository);
+    private final FunctionConfig configuration = new FunctionConfig(repository);
 
     private final ArgumentCaptor<MessageEntity> messageCaptor = ArgumentCaptor.forClass(MessageEntity.class);
 
+    private MessageDto messageDto;
+
+    @BeforeEach
+    public void setup() {
+        messageDto = getMessageDto("Hello");
+    }
+
     @Test
     public void return_same_input_when_sending_payload() {
-        MessageDto dto = getMessageDto("hello");
-        configuration.identity().accept(dto);
+        configuration.identity().accept(messageDto);
 
         verify(repository).saveAndFlush(messageCaptor.capture());
-        assertThat(messageCaptor.getValue().getMessage()).isEqualTo("hello");
+        assertThat(messageCaptor.getValue().getMessage()).isEqualTo("Hello");
     }
 
     @RepeatedTest(3)
     public void return_each_input_when_sending_payload(RepetitionInfo repetitionInfo) {
-        String payload = "hello" + repetitionInfo.getCurrentRepetition();
+        String payload = "Hello" + repetitionInfo.getCurrentRepetition();
         MessageDto dto = getMessageDto(payload);
         configuration.identity().accept(dto);
 
@@ -43,12 +50,9 @@ public class WeatherAppUnitTests {
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo(payload);
     }
 
-
     @Test
     public void return_reverse_input_when_sending_payload() {
-        String payload = "Hello";
-        MessageDto dto = getMessageDto(payload);
-        configuration.reverse().accept(dto);
+        configuration.reverse().accept(messageDto);
 
         verify(repository).saveAndFlush(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo("olleH");
@@ -56,19 +60,14 @@ public class WeatherAppUnitTests {
 
     @Test
     public void return_uppercase_input_when_sending_payload() {
-        String payload = "Hello";
-        MessageDto dto = getMessageDto(payload);
-        MessageDto uppercasedDto = configuration.uppercase().apply(dto);
+        MessageDto uppercasedDto = configuration.uppercase().apply(messageDto);
 
         assertThat(uppercasedDto.getMessage()).isEqualTo("HELLO");
     }
 
     @Test
     public void return_uppercase_and_reversed_input_when_sending_payload() {
-        String payload = "Hello";
-        MessageDto dto = getMessageDto(payload);
-
-        configuration.reverse().accept(configuration.uppercase().apply(dto));
+        configuration.reverse().accept(configuration.uppercase().apply(messageDto));
 
         verify(repository).saveAndFlush(messageCaptor.capture());
         assertThat(messageCaptor.getValue().getMessage()).isEqualTo("OLLEH");

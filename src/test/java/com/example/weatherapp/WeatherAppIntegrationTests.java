@@ -9,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.util.MimeType;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
@@ -20,13 +19,13 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.example.weatherapp.constants.BindingConstants.*;
+import static com.example.weatherapp.constants.ContentTypeConstants.AVRO_MIME_TYPE;
 import static org.awaitility.Awaitility.await;
 
 @Testcontainers
 @SpringBootTest
 public class WeatherAppIntegrationTests {
-
-    public static final String APPLICATION_AVRO = "application/*+avro";
 
     private static Network network = Network.newNetwork();
 
@@ -39,7 +38,7 @@ public class WeatherAppIntegrationTests {
     public static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
 
     @Container
-    public static GenericContainer schemaContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:latest"))
+    public static GenericContainer schemaContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:5.4.3"))
             .dependsOn(kafka)
             .withExposedPorts(8081)
             .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
@@ -74,7 +73,7 @@ public class WeatherAppIntegrationTests {
 
     @Test
     public void return_same_input_when_sending_payload() {
-        streamBridge.send("identity-in-0", messageDto, MimeType.valueOf(APPLICATION_AVRO));
+        streamBridge.send(IDENTITY_BINDING.getValue(), messageDto, AVRO_MIME_TYPE.getValue());
 
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("hello").isEmpty());
@@ -82,7 +81,7 @@ public class WeatherAppIntegrationTests {
 
     @Test
     public void return_reverse_input_when_sending_payload() {
-        streamBridge.send("reverse-in-0", messageDto, MimeType.valueOf(APPLICATION_AVRO));
+        streamBridge.send(REVERSE_BINDING.getValue(), messageDto, AVRO_MIME_TYPE.getValue());
 
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("olleh").isEmpty());
@@ -90,7 +89,7 @@ public class WeatherAppIntegrationTests {
 
     @Test
     public void return_uppercase_and_reversed_input_when_sending_payload() {
-        streamBridge.send("upperCaseReverseInput", messageDto, MimeType.valueOf(APPLICATION_AVRO));
+        streamBridge.send(UPPERCASE_REVERSE_BINDING.getValue(), messageDto, AVRO_MIME_TYPE.getValue());
 
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("OLLEH").isEmpty());

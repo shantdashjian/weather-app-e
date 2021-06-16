@@ -10,11 +10,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Configuration
-public class FunctionConfiguration {
+public class FunctionConfig {
 
     private final MessageRepository repository;
 
-    public FunctionConfiguration(MessageRepository repository) {
+    public FunctionConfig(MessageRepository repository) {
         this.repository = repository;
     }
 
