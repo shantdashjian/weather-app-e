@@ -12,8 +12,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.MimeType;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -28,13 +28,23 @@ public class WeatherAppIntegrationTests {
 
     public static final String APPLICATION_AVRO = "application/*+avro";
 
+    private static Network network = Network.newNetwork();
+
     @Container
-    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
+    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+            .withNetwork(network)
+            .withNetworkAliases("kafkacontainer");
 
     @Container
     public static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
 
-    public static GenericContainer schemaContainer;
+    @Container
+    public static GenericContainer schemaContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:latest"))
+            .dependsOn(kafka)
+            .withExposedPorts(8081)
+            .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+            .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "kafkacontainer:9092")
+            .withNetwork(network);
 
     @Autowired
     private MessageRepository repository;
@@ -52,17 +62,8 @@ public class WeatherAppIntegrationTests {
         registry.add("spring.datasource.username", () -> postgres.getUsername());
         registry.add("spring.datasource.password", () -> postgres.getPassword());
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
-
-        schemaContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:latest"))
-                .dependsOn(kafka)
-                .withExposedPorts(8081)
-                .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
-                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
-                .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-//                .waitingFor(Wait.forHttp("/subjects"))
-        ;
-        schemaContainer.start();
-        ;
+        registry.add("spring.cloud.stream.kafka.binder.producer-properties.schema.registry.url",
+                () -> "http://" + schemaContainer.getHost() + ":" + schemaContainer.getFirstMappedPort());
     }
 
     @BeforeEach

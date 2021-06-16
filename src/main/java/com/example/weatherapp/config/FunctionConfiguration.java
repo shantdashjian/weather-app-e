@@ -6,7 +6,6 @@ import com.example.weatherapp.schema.MessageDto;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -27,9 +26,9 @@ public class FunctionConfiguration {
     @Bean
     public Function<MessageDto, MessageDto> uppercase() {
         return v ->
-             MessageDto.newBuilder()
-                    .setMessage(v.getMessage().toUpperCase())
-                    .build();
+                MessageDto.newBuilder()
+                        .setMessage(v.getMessage().toUpperCase())
+                        .build();
     }
 
     @Bean
