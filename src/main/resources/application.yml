@@ -1,0 +1,36 @@
+spring:
+    cloud:
+        function:
+            definition: identity;reverse;uppercase;uppercase|reverse
+        stream:
+            function:
+                bindings:
+                    uppercase|reverse-in-0: upperCaseReverseInput
+            bindings:
+                identity-in-0:
+                    content-type: application/*+avro
+                identity-out-0:
+                    content-type: application/*+avro
+                reverse-in-0:
+                    content-type: application/*+avro
+                reverse-out-0:
+                    content-type: application/*+avro
+                uppercase-in-0:
+                    content-type: application/*+avro
+                upperCaseReverseInput:
+                    content-type: application/*+avro
+            kafka:
+                binder:
+                    producer-properties:
+                        schema.registry.url: "http://localhost:8081"
+    datasource:
+        password: test
+        url: jdbc:postgresql://localhost:5432/postgres
+        username: message
+    jpa:
+        hibernate:
+            ddl-auto: create
+    kafka:
+        bootstrapServers: PLAINTEXT://localhost:9092
+
+

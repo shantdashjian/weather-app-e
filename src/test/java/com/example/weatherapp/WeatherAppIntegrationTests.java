@@ -1,6 +1,7 @@
 package com.example.weatherapp;
 
 import com.example.weatherapp.repository.MessageRepository;
+import com.example.weatherapp.schema.MessageDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +9,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.util.MimeType;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -22,17 +26,23 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest
 public class WeatherAppIntegrationTests {
 
+    public static final String APPLICATION_AVRO = "application/*+avro";
+
     @Container
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
 
     @Container
     public static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
 
+    public static GenericContainer schemaContainer;
+
     @Autowired
     private MessageRepository repository;
 
     @Autowired
     private StreamBridge streamBridge;
+
+    private MessageDto messageDto;
 
     @DynamicPropertySource
     static void registerPgProperties(DynamicPropertyRegistry registry) {
@@ -42,45 +52,45 @@ public class WeatherAppIntegrationTests {
         registry.add("spring.datasource.username", () -> postgres.getUsername());
         registry.add("spring.datasource.password", () -> postgres.getPassword());
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
+
+        schemaContainer = new GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:latest"))
+                .dependsOn(kafka)
+                .withExposedPorts(8081)
+                .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
+                .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
+//                .waitingFor(Wait.forHttp("/subjects"))
+        ;
+        schemaContainer.start();
+        ;
     }
 
     @BeforeEach
     public void setup() {
         repository.deleteAll();
+        messageDto = MessageDto.newBuilder().setMessage("hello").build();
     }
 
     @Test
     public void return_same_input_when_sending_payload() {
-        // Arrange
+        streamBridge.send("identity-in-0", messageDto, MimeType.valueOf(APPLICATION_AVRO));
 
-        // Act
-        streamBridge.send("identity-in-0", "hello");
-
-        // Assert
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("hello").isEmpty());
     }
 
     @Test
     public void return_reverse_input_when_sending_payload() {
-        // Arrange
+        streamBridge.send("reverse-in-0", messageDto, MimeType.valueOf(APPLICATION_AVRO));
 
-        // Act
-        streamBridge.send("reverse-in-0", "hello");
-
-        // Assert
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("olleh").isEmpty());
     }
 
     @Test
     public void return_uppercase_and_reversed_input_when_sending_payload() {
-        // Arrange
+        streamBridge.send("upperCaseReverseInput", messageDto, MimeType.valueOf(APPLICATION_AVRO));
 
-        // Act
-        streamBridge.send("upperCaseReverseInput", "hello");
-
-        // Assert
         await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> !repository.findAllByMessage("OLLEH").isEmpty());
     }

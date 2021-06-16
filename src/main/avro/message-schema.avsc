@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "MessageDto",
+  "namespace": "com.example.weatherapp.schema",
+  "fields": [
+    {
+      "name": "message",
+      "type": "string"
+    }]
+}

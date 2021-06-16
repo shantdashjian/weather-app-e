@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface MessageRepository extends JpaRepository<MessageEntity, Integer> {
-
     List<MessageEntity> findAllByMessage(String message);
 }

@@ -11,8 +11,9 @@ It's an app that reads events from a Kafka message broker, processes them, and s
 
 ## Prerequisite
 1. Java 8+
-2. Kafka Message Broker (https://kafka.apache.org/downloads)
-3. Postgres DB (https://www.postgresql.org/download/)
+2. Docker & Docker Composer 
+3. Setup and run a local Kafka message broker and Postgres database by running the following command from project root:
+   `> docker-composer up -d`
 
 ## Core Functionality
 ![image](https://user-images.githubusercontent.com/5508288/121730731-efb50f80-caa4-11eb-89ad-ccc39415a620.png)
@@ -22,7 +23,7 @@ It's an app that reads events from a Kafka message broker, processes them, and s
 2. We learned how to write unit test for Spring Cloud Stream framework.
 3. We learned how to write integration tests using Testcontainers.
 4. We learned how to write simple message handlers.
-5. We learned how to compose the simple message handlers via configuartion properties. 
+5. We learned how to compose the simple message handlers via configuration properties. 
 
 
 
