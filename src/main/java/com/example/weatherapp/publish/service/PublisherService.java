@@ -9,11 +9,11 @@ import static com.example.weatherapp.constants.BindingConstants.*;
 import static com.example.weatherapp.constants.ContentTypeConstants.AVRO_MIME_TYPE;
 
 @Service
-public class MessageService {
+public class PublisherService {
 
     private final StreamBridge streamBridge;
 
-    public MessageService(StreamBridge streamBridge) {
+    public PublisherService(StreamBridge streamBridge) {
         this.streamBridge = streamBridge;
     }
 

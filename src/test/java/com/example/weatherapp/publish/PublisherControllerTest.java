@@ -1,7 +1,7 @@
-package com.example.weatherapp;
+package com.example.weatherapp.publish;
 
 import com.example.weatherapp.publish.model.Message;
-import com.example.weatherapp.publish.service.MessageService;
+import com.example.weatherapp.publish.service.PublisherService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,12 +18,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest
-public class MessageControllerSliceTest {
+public class PublisherControllerTest {
     @Autowired
     private MockMvc mvc;
 
     @MockBean
-    private MessageService service;
+    private PublisherService service;
 
     private final ObjectMapper mapper = new ObjectMapper();
 

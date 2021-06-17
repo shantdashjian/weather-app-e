@@ -1,7 +1,7 @@
 package com.example.weatherapp.publish.controller;
 
 import com.example.weatherapp.publish.model.Message;
-import com.example.weatherapp.publish.service.MessageService;
+import com.example.weatherapp.publish.service.PublisherService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/message")
-public class MessageController {
+public class PublisherController {
 
-    private final MessageService messageService;
+    private final PublisherService messageService;
 
-    public MessageController(MessageService messageService) {
+    public PublisherController(PublisherService messageService) {
         this.messageService = messageService;
     }
 

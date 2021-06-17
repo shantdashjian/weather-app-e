@@ -1,8 +1,8 @@
-package com.example.weatherapp;
+package com.example.weatherapp.publish;
 
 import com.example.weatherapp.publish.model.Message;
 import com.example.weatherapp.schema.MessageDto;
-import com.example.weatherapp.publish.service.MessageService;
+import com.example.weatherapp.publish.service.PublisherService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,11 +18,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class MessageServiceTest {
+public class PublisherServiceTest {
 
     private StreamBridge streamBridge = mock(StreamBridge.class);
 
-    private MessageService messageService = new MessageService(streamBridge);
+    private PublisherService messageService = new PublisherService(streamBridge);
 
     private static ArgumentCaptor<MessageDto> messageDtoCaptor;
 
