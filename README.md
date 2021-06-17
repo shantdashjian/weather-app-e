@@ -11,7 +11,7 @@ It's an app that reads events from a Kafka message broker, processes them, and s
 
 ## Prerequisite
 1. Java 8+
-2. Docker & Docker Composer 
+2. Docker & Docker Compose 
 3. Setup and run a local Kafka message broker, Avro schema registry, and Postgres database by running the following command from project root:
    `> docker-compose up -d`
 
