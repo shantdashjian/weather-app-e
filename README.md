@@ -6,7 +6,7 @@ To learn more about creating event-driven architectures/data pipelines using Spr
 ## What
 It's an app that reads events from a Kafka message broker, processes them, and stores the processed events to a Postgres database.
 
-## Architecure
+## Architecture
 ![Screen Shot 2021-06-16 at 5 21 38 PM](https://user-images.githubusercontent.com/2113918/122311612-6d26b880-cec7-11eb-87fa-96a54f0c76c9.png)
 
 ## Prerequisite
